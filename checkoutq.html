@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Safari Max</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #e73636;
+            --secondary-color: #ff5526;
+            --accent-color: #580d00;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        .payment-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-top: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .payment-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .payment-option {
+            background: #fff;
+            border: 2px solid #eee;
+            padding: 25px;
+            margin: 15px 0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .payment-option:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+            box-shadow: 0 5px 15px rgba(231, 54, 54, 0.1);
+        }
+
+        .payment-method-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #eee;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(231, 54, 54, 0.25);
+        }
+
+        .btn-payment {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-payment:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 54, 54, 0.3);
+        }
+
+        .error {
+            color: #dc3545;
+            font-size: 0.85em;
+            margin-top: 5px;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .success-checkmark {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            animation: bounceIn 1s ease-in-out;
+        }
+
+        .payment-progress {
+            height: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+            background-color: #e9ecef;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            transition: width 0.6s ease;
+        }
+
+        .card-icon {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 2rem;
+            color: var(--primary-color);
+        }
+
+        /* Custom Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .floating-label {
+            position: absolute;
+            pointer-events: none;
+            left: 12px;
+            top: 12px;
+            transition: 0.2s ease all;
+            color: #6c757d;
+        }
+
+        .form-control:focus ~ .floating-label,
+        .form-control:not(:placeholder-shown) ~ .floating-label {
+            transform: translateY(-20px) scale(0.8);
+            color: var(--primary-color);
+        }
+
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .secure-badge i {
+            color: #28a745;
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="payment-container animate__animated animate__fadeIn">
+                    <h2 class="text-center mb-4">Secure Checkout</h2>
+                    
+                    <div class="payment-progress">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+
+                    <div class="secure-badge mb-4">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure Payment Gateway</span>
+                    </div>
+
+                    <form id="paymentForm" onsubmit="return validateForm(event)">
+                        <!-- Payment Method Selection -->
+                        <div class="mb-4 slide-up">
+                            <h4><i class="fas fa-credit-card me-2"></i>Select Payment Method</h4>
+                            <select class="form-select" id="paymentMethod" onchange="showPaymentForm()">
+                                <option value="">Choose your preferred payment method</option>
+                                <option value="card">Credit/Debit Card</option>
+                                <option value="upi">UPI Payment</option>
+                                <option value="netbanking">Net Banking</option>
+                                <option value="cash">Cash on Delivery</option>
+                            </select>
+                        </div>
+
+                        <!-- Card Payment Form -->
+                        <div id="cardForm" class="payment-option animate__animated" style="display: none;">
+                            <i class="fas fa-credit-card card-icon"></i>
+                            <h5 class="mb-4">Card Details</h5>
+                            <div class="mb-3 position-relative">
+                                <input type="text" class="form-control" id="cardNumber" maxlength="16" placeholder=" ">
+                                <label class="floating-label">Card Number</label>
+                                <div class="error" id="cardNumberError"></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3 position-relative">
+                                    <input type="text" class="form-control" id="expiryDate" placeholder=" " maxlength="5">
+                                    <label class="floating-label">Expiry Date (MM/YY)</label>
+                                    <div class="error" id="expiryError"></div>
+                                </div>
+                                <div class="col-md-6 mb-3 position-relative">
+                                    <input type="password" class="form-control" id="cvv" maxlength="3" placeholder=" ">
+                                    <label class="floating-label">CVV</label>
+                                    <div class="error" id="cvvError"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- UPI Form -->
+                        <div id="upiForm" class="payment-option animate__animated" style="display: none;">
+                            <i class="fas fa-mobile-alt card-icon"></i>
+                            <h5 class="mb-4">UPI Payment</h5>
+                            <div class="mb-3 position-relative">
+                                <input type="text" class="form-control" id="upiId" placeholder=" ">
+                                <label class="floating-label">UPI ID</label>
+                                <div class="error" id="upiError"></div>
+                            </div>
+                        </div>
+
+                        <!-- Net Banking Form -->
+                        <div id="netbankingForm" class="payment-option animate__animated" style="display: none;">
+                            <i class="fas fa-university card-icon"></i>
+                            <h5 class="mb-4">Net Banking</h5>
+                            <div class="mb-3">
+                                <select class="form-select mb-3" id="bankSelect">
+                                    <option value="">Select your bank</option>
+                                    <option value="sbi">State Bank of India</option>
+                                    <option value="hdfc">HDFC Bank</option>
+                                    <option value="icici">ICICI Bank</option>
+                                    <option value="axis">Axis Bank</option>
+                                    <option value="kotak">Kotak Mahindra Bank</option>
+                                    <option value="yes">Yes Bank</option>
+                                </select>
+                                <div class="error" id="bankError"></div>
+                            </div>
+
+                            <div class="mb-3 position-relative">
+                                <input type="text" class="form-control" id="accountNumber" placeholder=" " maxlength="18">
+                                <label class="floating-label">Account Number</label>
+                                <div class="error" id="accountNumberError"></div>
+                            </div>
+
+                            <div class="mb-3 position-relative">
+                                <input type="text" class="form-control" id="ifscCode" placeholder=" " maxlength="11">
+                                <label class="floating-label">IFSC Code</label>
+                                <div class="error" id="ifscError"></div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3 position-relative">
+                                    <input type="text" class="form-control" id="branchName" placeholder=" ">
+                                    <label class="floating-label">Branch Name</label>
+                                    <div class="error" id="branchError"></div>
+                                </div>
+                                <div class="col-md-6 mb-3 position-relative">
+                                    <div class="state-city-selection">
+                                        <select class="form-control mb-2" id="stateSelect" onchange="loadCities()">
+                                            <option value="">Select State</option>
+                                            <option value="andhra_pradesh">Andhra Pradesh</option>
+                                            <option value="arunachal_pradesh">Arunachal Pradesh</option>
+                                            <option value="assam">Assam</option>
+                                            <option value="bihar">Bihar</option>
+                                            <option value="chhattisgarh">Chhattisgarh</option>
+                                            <option value="goa">Goa</option>
+                                            <option value="gujarat">Gujarat</option>
+                                            <option value="haryana">Haryana</option>
+                                            <option value="himachal_pradesh">Himachal Pradesh</option>
+                                            <option value="jharkhand">Jharkhand</option>
+                                            <option value="karnataka">Karnataka</option>
+                                            <option value="kerala">Kerala</option>
+                                            <option value="madhya_pradesh">Madhya Pradesh</option>
+                                            <option value="maharashtra">Maharashtra</option>
+                                            <option value="manipur">Manipur</option>
+                                            <option value="meghalaya">Meghalaya</option>
+                                            <option value="mizoram">Mizoram</option>
+                                            <option value="nagaland">Nagaland</option>
+                                            <option value="odisha">Odisha</option>
+                                            <option value="punjab">Punjab</option>
+                                            <option value="rajasthan">Rajasthan</option>
+                                            <option value="sikkim">Sikkim</option>
+                                            <option value="tamil_nadu">Tamil Nadu</option>
+                                            <option value="telangana">Telangana</option>
+                                            <option value="tripura">Tripura</option>
+                                            <option value="uttar_pradesh">Uttar Pradesh</option>
+                                            <option value="uttarakhand">Uttarakhand</option>
+                                            <option value="west_bengal">West Bengal</option>
+                                        </select>
+                                        <select class="form-control" id="branchCity" disabled>
+                                            <option value="">First Select State</option>
+                                        </select>
+                                    </div>
+                                    <!-- <label class="floating-label">Branch City</label> -->
+                                    <div class="error" id="cityError"></div>
+                                    <script>
+                                        const citiesByState = {
+                                            andhra_pradesh: ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Kakinada", "Tirupati", "Rajahmundry", "Kadapa", "Anantapur"],
+                                            arunachal_pradesh: ["Itanagar", "Naharlagun", "Pasighat", "Namsai", "Tezu", "Roing", "Ziro", "Bomdila", "Tawang", "Along"],
+                                            assam: ["Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Nagaon", "Tinsukia", "Tezpur", "Karimganj", "Hailakandi", "Goalpara"],
+                                            bihar: ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia", "Darbhanga", "Bihar Sharif", "Arrah", "Begusarai", "Katihar"],
+                                            chhattisgarh: ["Raipur", "Bhilai", "Bilaspur", "Korba", "Rajnandgaon", "Raigarh", "Durg", "Jagdalpur", "Ambikapur", "Mahasamund"],
+                                            goa: ["Panaji", "Margao", "Vasco da Gama", "Mapusa", "Ponda", "Bicholim", "Curchorem", "Cuncolim", "Valpoi", "Sanquelim"],
+                                            gujarat: ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Gandhinagar", "Junagadh", "Anand", "Bharuch"],
+                                            haryana: ["Faridabad", "Gurgaon", "Panipat", "Ambala", "Yamunanagar", "Rohtak", "Hisar", "Karnal", "Sonipat", "Panchkula"],
+                                            himachal_pradesh: ["Shimla", "Mandi", "Solan", "Dharamshala", "Kullu", "Hamirpur", "Una", "Bilaspur", "Chamba", "Nahan"],
+                                            jharkhand: ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Hazaribagh", "Deoghar", "Giridih", "Ramgarh", "Phusro", "Medininagar"],
+                                            karnataka: ["Bengaluru", "Mysuru", "Hubli", "Mangaluru", "Belgaum", "Gulbarga", "Dharwad", "Shimoga", "Davangere", "Bellary"],
+                                            kerala: ["Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam", "Palakkad", "Alappuzha", "Kannur", "Kottayam", "Malappuram"],
+                                            madhya_pradesh: ["Bhopal", "Indore", "Jabalpur", "Gwalior", "Ujjain", "Sagar", "Dewas", "Satna", "Ratlam", "Rewa"],
+                                            maharashtra: ["Mumbai", "Pune", "Nagpur", "Thane", "Nashik", "Aurangabad", "Solapur", "Kolhapur", "Amravati", "Nanded"],
+                                            manipur: ["Imphal", "Thoubal", "Kakching", "Ukhrul", "Chandel", "Bishnupur", "Churachandpur", "Senapati", "Tamenglong", "Jiribam"],
+                                            meghalaya: ["Shillong", "Tura", "Jowai", "Nongstoin", "Williamnagar", "Resubelpara", "Baghmara", "Nongpoh", "Mairang", "Cherrapunji"],
+                                            mizoram: ["Aizawl", "Lunglei", "Saiha", "Champhai", "Kolasib", "Serchhip", "Lawngtlai", "Mamit", "Khawzawl", "Hnahthial"],
+                                            nagaland: ["Kohima", "Dimapur", "Mokokchung", "Tuensang", "Wokha", "Zunheboto", "Mon", "Phek", "Kiphire", "Longleng"],
+                                            odisha: ["Bhubaneswar", "Cuttack", "Rourkela", "Berhampur", "Sambalpur", "Puri", "Balasore", "Bhadrak", "Baripada", "Jharsuguda"],
+                                            punjab: ["Ludhiana", "Amritsar", "Jalandhar", "Patiala", "Bathinda", "Mohali", "Pathankot", "Hoshiarpur", "Batala", "Moga"],
+                                            rajasthan: ["Jaipur", "Jodhpur", "Kota", "Bikaner", "Ajmer", "Udaipur", "Bhilwara", "Alwar", "Sikar", "Sri Ganganagar"],
+                                            sikkim: ["Gangtok", "Namchi", "Gyalshing", "Mangan", "Rangpo", "Singtam", "Jorethang", "Nayabazar", "Ravangla", "Soreng"],
+                                            tamil_nadu: ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli", "Tiruppur", "Vellore", "Erode", "Thoothukkudi"],
+                                            telangana: ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Khammam", "Ramagundam", "Secunderabad", "Nalgonda", "Suryapet", "Miryalaguda"],
+                                            tripura: ["Agartala", "Udaipur", "Dharmanagar", "Pratapgarh", "Belonia", "Kailasahar", "Khowai", "Teliamura", "Mohanpur", "Melaghar"],
+                                            uttar_pradesh: ["Lucknow", "Kanpur", "Varanasi", "Agra", "Prayagraj", "Meerut", "Bareilly", "Aligarh", "Moradabad", "Saharanpur"],
+                                            uttarakhand: ["Dehradun", "Haridwar", "Roorkee", "Haldwani", "Rudrapur", "Kashipur", "Rishikesh", "Pithoragarh", "Ramnagar", "Kotdwar"],
+                                            west_bengal: ["Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri", "Bardhaman", "Malda", "Baharampur", "Habra", "Kharagpur"]
+                                        };
+
+                                        function loadCities() {
+                                            const stateSelect = document.getElementById('stateSelect');
+                                            const citySelect = document.getElementById('branchCity');
+                                            const selectedState = stateSelect.value;
+
+                                            // Reset city dropdown
+                                            citySelect.innerHTML = '<option value="">Select City</option>';
+                                            
+                                            if (selectedState) {
+                                                citySelect.disabled = false;
+                                                const cities = citiesByState[selectedState] || [];
+                                                cities.forEach(city => {
+                                                    const option = document.createElement('option');
+                                                    option.value = city.toLowerCase();
+                                                    option.textContent = city;
+                                                    citySelect.appendChild(option);
+                                                });
+                                            } else {
+                                                citySelect.disabled = true;
+                                            }
+                                        }
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cash on Delivery -->
+                        <div id="cashForm" class="payment-option animate__animated" style="display: none;">
+                            <i class="fas fa-money-bill-wave card-icon"></i>
+                            <h5 class="mb-4">Cash on Delivery</h5>
+                            <p>Pay securely at the time of delivery</p>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Additional COD charges may apply
+                            </div>
+                        </div>
+
+                        <div class="loading-spinner" id="loadingSpinner"></div>
+                        
+                        <button type="submit" class="btn btn-payment w-100 mt-4" id="submitButton">
+                            <i class="fas fa-lock me-2"></i>Make Secure Payment
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize tooltips
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // Animate form controls on focus
+            $('.form-control').focus(function() {
+                $(this).parent().addClass('focused');
+            }).blur(function() {
+                $(this).parent().removeClass('focused');
+            });
+
+            // Card number formatting
+            $('#cardNumber').on('input', function() {
+                $(this).val($(this).val().replace(/\D/g, ''));
+            });
+
+            // Expiry date formatting
+            $('#expiryDate').on('input', function() {
+                let value = $(this).val().replace(/\D/g, '');
+                if (value.length > 2) {
+                    value = value.substr(0,2) + '/' + value.substr(2);
+                }
+                $(this).val(value);
+            });
+        });
+
+        function showPaymentForm() {
+            const selectedMethod = $('#paymentMethod').val();
+            
+            // Hide all forms with animation
+            $('.payment-option').hide().removeClass('animate__fadeIn');
+            
+            // Update progress bar
+            $('.progress-bar').css('width', '25%');
+
+            if(selectedMethod) {
+                // Show selected form with animation
+                $(`#${selectedMethod}Form`).show().addClass('animate__fadeIn');
+                // Update progress bar
+                $('.progress-bar').css('width', '50%');
+            }
+        }
+
+        function validateForm(event) {
+            event.preventDefault();
+            let isValid = true;
+            const selectedMethod = $('#paymentMethod').val();
+
+            // Clear previous errors
+            clearErrors();
+            
+            // Update progress bar
+            $('.progress-bar').css('width', '75%');
+
+            if(!selectedMethod) {
+                showError('Please select a payment method', 'general');
+                return false;
+            }
+
+            // Show loading spinner
+            $('#loadingSpinner').show();
+            $('#submitButton').prop('disabled', true);
+
+            // Simulate processing delay
+            setTimeout(() => {
+                if(selectedMethod === 'card') {
+                    const cardNumber = $('#cardNumber').val();
+                    const expiry = $('#expiryDate').val();
+                    const cvv = $('#cvv').val();
+
+                    if(!/^\d{16}$/.test(cardNumber)) {
+                        showError('cardNumberError', 'Please enter a valid 16-digit card number');
+                        isValid = false;
+                    }
+                    if(!/^\d{2}\/\d{2}$/.test(expiry)) {
+                        showError('expiryError', 'Please enter expiry in MM/YY format');
+                        isValid = false;
+                    }
+                    if(!/^\d{3}$/.test(cvv)) {
+                        showError('cvvError', 'Please enter a valid 3-digit CVV');
+                        isValid = false;
+                    }
+                }
+
+                if(selectedMethod === 'upi') {
+                    const upiId = $('#upiId').val();
+                    if(!/^\d{10}@[a-zA-Z]{3}$/.test(upiId)) {
+                        showError('upiError', 'Please enter a valid UPI ID (10 digits@3letters)');
+                        isValid = false;
+                    }
+                }
+
+                if(selectedMethod === 'netbanking') {
+                    const bank = $('#bankSelect').val();
+                    if(!bank) {
+                        showError('bankError', 'Please select a bank');
+                        isValid = false;
+                    }
+                }
+
+                // Hide loading spinner
+                $('#loadingSpinner').hide();
+                $('#submitButton').prop('disabled', false);
+
+                if(isValid) {
+                    // Update progress bar to 100%
+                    $('.progress-bar').css('width', '100%');
+                    
+                    // Show success message with animation
+                    $('.payment-container').html(`
+                        <div class="text-center animate__animated animate__fadeIn">
+                            <div class="success-checkmark">
+                                <i class="fas fa-check-circle fa-5x text-success"></i>
+                            </div>
+                            <h3 class="mt-4">Payment Successful!</h3>
+                            <p class="text-muted">Your order has been confirmed</p>
+                            <div class="mt-4">
+                                <a href="index.html" class="btn btn-payment">
+                                    <i class="fas fa-home me-2"></i>Return to Home
+                                </a>
+                            </div>
+                        </div>
+                    `);
+                }
+            }, 1500);
+
+            return false;
+        }
+
+        function showError(elementId, message) {
+            $(`#${elementId}`).html(`
+                <div class="animate__animated animate__shakeX">
+                    <i class="fas fa-exclamation-circle me-1"></i>${message}
+                </div>
+            `);
+        }
+
+        function clearErrors() {
+            $('.error').empty();
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
